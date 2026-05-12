@@ -1,0 +1,31 @@
+{
+  "name": "ci-demo",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "lint": "echo Lint Passed",
+    "test": "echo Test Passed",
+    "build": "echo Build Successful"
+  }
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aghamaaz488/ci-demo.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/aghamaaz488/ci-demo/issues"
+  },
+  "homepage": "https://github.com/aghamaaz488/ci-demo#readme",
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^11.0.6",
+    "conventional-changelog-conventionalcommits": "^9.3.1",
+    "eslint": "^10.3.0",
+    "semantic-release": "^24.2.9"
+  }
+}

@@ -1,0 +1,173 @@
+name: Professional CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+
+  pull_request:
+    branches:
+      - main
+
+env:
+  APP_NAME: ci-demo
+
+jobs:
+
+  lint:
+    name: Lint Code
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run ESLint
+        run: npm run lint
+
+  test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Execute Tests
+        run: npm test
+
+  security-scan:
+    name: Trivy Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Run Trivy Vulnerability Scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          ignore-unfixed: true
+          format: 'table'
+          exit-code: '1'
+
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+
+    needs:
+      - lint
+      - test
+      - security-scan
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Build Project
+        run: |
+          echo "Building Application..."
+          mkdir build
+          echo "Build Successful" > build/output.txt
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+
+    needs: build
+
+    environment:
+      name: staging
+
+    steps:
+      - name: Simulated Staging Deployment
+        run: |
+          echo "Deploying application to STAGING environment..."
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+
+    needs: deploy-staging
+
+    environment:
+      name: production
+
+    env:
+      PROD_API_KEY: ${{ secrets.PROD_API_KEY }}
+
+    steps:
+      - name: Production Deployment
+        run: |
+          echo "Deploying application to PRODUCTION..."
+
+      - name: Smoke Test
+        id: smoke-test
+        run: |
+          echo "Running Smoke Test..."
+          exit 1
+
+      - name: Rollback Deployment
+        if: failure()
+        run: |
+          echo "Smoke Test Failed!"
+          echo "Rolling back deployment..."
+
+  semantic-release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+
+    needs: deploy-production
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Semantic Release
+        run: |
+          npm install semantic-release \
+          @semantic-release/changelog \
+          @semantic-release/git \
+          @semantic-release/github \
+          conventional-changelog-conventionalcommits --save-dev
+
+      - name: Run Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx semantic-release
